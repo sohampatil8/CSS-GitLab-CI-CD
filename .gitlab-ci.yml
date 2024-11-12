@@ -1,0 +1,40 @@
+
+# Define pipeline stages
+stages:
+  - build
+  - deploy
+  
+# BUILD AND PUSH DOCKER_IMAGE
+build_push_image:
+   stage: build
+   image: docker:latest
+   services:
+    - docker:dind
+   script:
+     - docker build -t $DockerHub/$DockerHub_Repo .
+     - docker login -u $DockerHub -p $DockerHubPassward $DOCKER_REGISTRY
+     - docker push $DockerHub/$DockerHub_Repo:latest
+     - echo "image push successfully"
+
+# deploy:
+#   stage: deploy
+#   script:
+#     - docker pull $DockerHub/$DockerHub_Repo:latest
+#     - docker run -d -p 80:80 $DockerHub/$DockerHub_Repo:latest
+#   only:
+#     - main
+
+variables:
+  KUBE_CONTEXT: devops-engineer6395940/css-pipeline:my-cluster
+deploy-to-k8s:
+  stage: deploy
+  image: 
+    name: bitnami/kubectl:latest
+    entrypoint: ['']
+  before_script:
+  - kubectl config use-context "$KUBE_CONTEXT"
+  script:
+    - echo "Deploying to AWS EKS"
+    - kubectl get ns
+    - kubectl apply -f k8s-pipeline.yml
+    - kubectl get svc
